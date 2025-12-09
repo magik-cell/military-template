@@ -1,11 +1,46 @@
 # Spring Application Configuration
 spring:
   application:
-    name: military-api
-
+    name: military-warehouse-api
+  
   # Database Configuration
   datasource:
-    url: jdbc:postgresql://localhost:5432/military_db
+    url: jdbc:postgresql://localhost:5432/military_db?serverTimezone=UTC
     username: military_user
     password: military_pass
     driver-class-name: org.postgresql.Driver
+  
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+
+# SpringDoc OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+
+# Logging Configuration
+logging:
+  level:
+    ua.edu.viti.military: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# Server Configuration
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
