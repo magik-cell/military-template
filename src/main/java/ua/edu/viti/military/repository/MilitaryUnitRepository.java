@@ -27,4 +27,10 @@ public interface MilitaryUnitRepository extends JpaRepository<MilitaryUnit, Long
     List<MilitaryUnit> findTopLevelUnits();
 
     List<MilitaryUnit> findByCommanderId(Long commanderId);
+
+    @Query("SELECT m FROM MilitaryUnit m " +
+           "LEFT JOIN FETCH m.unitType " +
+           "LEFT JOIN FETCH m.commander " +
+           "WHERE m.id = :id")
+    Optional<MilitaryUnit> findByIdWithDetails(Long id);
 }
