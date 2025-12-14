@@ -1,26 +1,32 @@
 package ua.edu.viti.military.service;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ua.edu.viti.military.dto.request.PersonnelCreateDTO;
 import ua.edu.viti.military.dto.request.PersonnelUpdateDTO;
-import ua.edu.viti.military.dto.response.MilitaryUnitResponseDTO;
 import ua.edu.viti.military.dto.response.PersonnelResponseDTO;
 import ua.edu.viti.military.entity.MilitaryUnit;
 import ua.edu.viti.military.entity.Personnel;
 import ua.edu.viti.military.entity.Rank;
 import ua.edu.viti.military.entity.SecurityClearance;
+import ua.edu.viti.military.event.PersonnelAssignedEvent;
+import ua.edu.viti.military.event.PersonnelTransferredEvent;
 import ua.edu.viti.military.exception.BusinessLogicException;
 import ua.edu.viti.military.exception.DuplicateResourceException;
 import ua.edu.viti.military.exception.ResourceNotFoundException;
+import ua.edu.viti.military.mapper.PersonnelMapper;
 import ua.edu.viti.military.repository.MilitaryUnitRepository;
 import ua.edu.viti.military.repository.PersonnelRepository;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,13 +36,23 @@ public class PersonnelService {
 
     private final PersonnelRepository personnelRepository;
     private final MilitaryUnitRepository militaryUnitRepository;
+    private final PersonnelMapper personnelMapper;
+    private final ApplicationEventPublisher eventPublisher;  // ← Inject EventPublisher
+    private final MetricsService metricsService;  // ← Inject MetricsService
 
     @Transactional
+    @SuppressWarnings("null")
+    @CacheEvict(value = "personnel", allEntries = true)
     public PersonnelResponseDTO create(PersonnelCreateDTO dto) {
-        log.info("Creating new personnel with military ID: {}", dto.getViyskovyiId());
-
+        // Додати контекст в MDC для structured logging
+        MDC.put("operation", "create_personnel");
+        MDC.put("militaryId", dto.getViyskovyiId());
         
-        if (personnelRepository.existsByMilitaryId(dto.getViyskovyiId())) {
+        try {
+            log.info("Creating new personnel with military ID: {}", dto.getViyskovyiId());
+
+            
+            if (personnelRepository.existsByMilitaryId(dto.getViyskovyiId())) {
             throw new DuplicateResourceException(
                 "Військовослужбовець з ID " + dto.getViyskovyiId() + " вже існує"
             );
@@ -74,72 +90,110 @@ public class PersonnelService {
         Personnel saved = personnelRepository.save(personnel);
         log.info("Personnel created with ID: {}", saved.getId());
 
-        return toResponseDTO(saved);
+        // ✅ Опублікувати event про призначення до підрозділу
+        if (unit != null) {
+            // ✅ Зафіксувати metric
+            metricsService.recordPersonnelAssigned(
+                saved.getFirstName() + " " + saved.getLastName(),
+                unit.getName()
+            );
+            
+            eventPublisher.publishEvent(
+                new PersonnelAssignedEvent(
+                    this,
+                    saved,
+                    unit.getName(),
+                    unit.getCode(),
+                    "System"  // В реальній системі - getCurrentUser()
+                )
+            );
+            log.info("PersonnelAssignedEvent published for personnel ID: {}", saved.getId());
+        }
+
+        return personnelMapper.toResponseDTO(saved);
+        
+        } finally {
+            // Очистити MDC після виконання
+            MDC.remove("operation");
+            MDC.remove("militaryId");
+            MDC.remove("personnelId");
+        }
     }
 
-    public PersonnelResponseDTO getById(Long id) {
-        log.debug("Fetching personnel with ID: {}", id);
+    /**
+     * Кешування - результат зберігається в Redis
+     * Ключ: personnel::1 (де 1 - це id)
+     */
+    @Cacheable(value = "personnel", key = "#id")
+    public PersonnelResponseDTO getById(@NonNull Long id) {
+        MDC.put("operation", "get_personnel_by_id");
+        MDC.put("personnelId", id.toString());
+        
+        try {
+            log.info("Fetching personnel from database: id={}", id);
 
         Personnel personnel = personnelRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Військовослужбовець з ID " + id + " не знайдено"
             ));
 
-        return toResponseDTO(personnel);
+        return personnelMapper.toResponseDTO(personnel);
+        
+        } finally {
+            MDC.remove("operation");
+            MDC.remove("personnelId");
+        }
     }
 
+    /**
+     * Кешування списку
+     * Ключ: personnel::all
+     */
+    @Cacheable(value = "personnel", key = "'all'")
     public List<PersonnelResponseDTO> getAll() {
-        log.debug("Fetching all personnel");
+        log.info("Fetching all personnel from database");
 
-        return personnelRepository.findAll()
-            .stream()
-            .map(this::toResponseDTO)
-            .collect(Collectors.toList());
+        return personnelMapper.toResponseDTOList(personnelRepository.findAll());
     }
 
+    /**
+     * Кешування списку по підрозділу
+     * Ключ: personnel::unit::1
+     */
+    @Cacheable(value = "personnel", key = "'unit::' + #unitId")
     public List<PersonnelResponseDTO> getByUnitId(Long unitId) {
-        log.debug("Fetching personnel by unit ID: {}", unitId);
+        log.info("Fetching personnel by unit from database: unitId={}", unitId);
 
-        return personnelRepository.findByUnitId(unitId)
-            .stream()
-            .map(this::toResponseDTO)
-            .collect(Collectors.toList());
+        return personnelMapper.toResponseDTOList(
+            personnelRepository.findByUnitId(unitId));
     }
 
     public List<PersonnelResponseDTO> getByRank(Rank rank) {
         log.debug("Fetching personnel by rank: {}", rank);
 
-        return personnelRepository.findByRank(rank)
-            .stream()
-            .map(this::toResponseDTO)
-            .collect(Collectors.toList());
+        return personnelMapper.toResponseDTOList(
+            personnelRepository.findByRank(rank));
     }
 
     public List<PersonnelResponseDTO> getBySecurityClearance(SecurityClearance clearance) {
         log.debug("Fetching personnel by security clearance: {}", clearance);
 
-        return personnelRepository.findBySecurityClearance(clearance)
-            .stream()
-            .map(this::toResponseDTO)
-            .collect(Collectors.toList());
+        return personnelMapper.toResponseDTOList(
+            personnelRepository.findBySecurityClearance(clearance));
     }
 
     public List<PersonnelResponseDTO> getBySpecialization(String keyword) {
         log.debug("Fetching personnel by specialization keyword: {}", keyword);
 
-        return personnelRepository.findBySpecializationContaining(keyword)
-            .stream()
-            .map(this::toResponseDTO)
-            .collect(Collectors.toList());
+        return personnelMapper.toResponseDTOList(
+            personnelRepository.findBySpecializationContaining(keyword));
     }
 
     public List<PersonnelResponseDTO> getActivePersonnel() {
         log.debug("Fetching active personnel");
 
-        return personnelRepository.findActivePersonnel()
-            .stream()
-            .map(this::toResponseDTO)
-            .collect(Collectors.toList());
+        return personnelMapper.toResponseDTOList(
+            personnelRepository.findActivePersonnel());
     }
 
     public List<PersonnelResponseDTO> getContractsExpiringSoon(int daysThreshold) {
@@ -147,15 +201,21 @@ public class PersonnelService {
 
         LocalDate thresholdDate = LocalDate.now().plusDays(daysThreshold);
 
-        return personnelRepository.findByContractEndDateBefore(thresholdDate)
+        List<Personnel> expiring = personnelRepository.findByContractEndDateBefore(thresholdDate)
             .stream()
             .filter(p -> p.getContractEndDate().isAfter(LocalDate.now()))
-            .map(this::toResponseDTO)
-            .collect(Collectors.toList());
+            .toList();
+        
+        return personnelMapper.toResponseDTOList(expiring);
     }
 
+    /**
+     * При оновленні - invalidate кеш
+     */
     @Transactional
-    public PersonnelResponseDTO update(Long id, PersonnelUpdateDTO dto) {
+    @SuppressWarnings("null")
+    @CacheEvict(value = "personnel", allEntries = true)
+    public PersonnelResponseDTO update(@NonNull Long id, PersonnelUpdateDTO dto) {
         log.info("Updating personnel with ID: {}", id);
 
         Personnel personnel = personnelRepository.findById(id)
@@ -166,6 +226,10 @@ public class PersonnelService {
        
         validateContractActive(personnel);
 
+        // Зберігаємо старий підрозділ для event
+        MilitaryUnit oldUnit = personnel.getUnit();
+        MilitaryUnit newUnit = null;
+        
         
         if (dto.getImya() != null) {
             personnel.setFirstName(dto.getImya());
@@ -183,9 +247,9 @@ public class PersonnelService {
             personnel.setSpecialization(dto.getSpetsializatsiya());
         }
         if (dto.getPidrozdilId() != null) {
-            MilitaryUnit unit = militaryUnitRepository.findById(dto.getPidrozdilId())
+            newUnit = militaryUnitRepository.findById(dto.getPidrozdilId())
                 .orElseThrow(() -> new ResourceNotFoundException("Підрозділ не знайдено"));
-            personnel.setUnit(unit);
+            personnel.setUnit(newUnit);
         }
         if (dto.getDataZakinchennya() != null) {
             validateContractDates(personnel.getContractStartDate(), dto.getDataZakinchennya());
@@ -207,11 +271,41 @@ public class PersonnelService {
         Personnel updated = personnelRepository.save(personnel);
         log.info("Personnel with ID {} updated successfully", id);
 
-        return toResponseDTO(updated);
+        // ✅ Опублікувати event про переведення між підрозділами
+        if (newUnit != null && oldUnit != null && !oldUnit.getId().equals(newUnit.getId())) {
+            // ✅ Зафіксувати metric
+            metricsService.recordPersonnelTransferred(
+                updated.getFirstName() + " " + updated.getLastName(),
+                oldUnit.getName(),
+                newUnit.getName()
+            );
+            
+            eventPublisher.publishEvent(
+                new PersonnelTransferredEvent(
+                    this,
+                    updated.getId(),
+                    updated.getFirstName() + " " + updated.getLastName(),
+                    updated.getMilitaryId(),
+                    updated.getRank(),
+                    oldUnit.getId(),
+                    oldUnit.getName(),
+                    newUnit.getId(),
+                    newUnit.getName(),
+                    "System"  // В реальній системі - getCurrentUser()
+                )
+            );
+            log.info("PersonnelTransferredEvent published for personnel ID: {}", updated.getId());
+        }
+
+        return personnelMapper.toResponseDTO(updated);
     }
 
+    /**
+     * При видаленні - invalidate кеш
+     */
     @Transactional
-    public void delete(Long id) {
+    @CacheEvict(value = "personnel", allEntries = true)
+    public void delete(@NonNull Long id) {
         log.info("Deleting personnel with ID: {}", id);
 
         if (!personnelRepository.existsById(id)) {
@@ -246,47 +340,5 @@ public class PersonnelService {
                 personnel.getContractEndDate()
             );
         }
-    }
-
-
-
-    private PersonnelResponseDTO toResponseDTO(Personnel entity) {
-        PersonnelResponseDTO dto = new PersonnelResponseDTO();
-        dto.setId(entity.getId());
-        dto.setMilitaryId(entity.getMilitaryId());
-        dto.setFirstName(entity.getFirstName());
-        dto.setLastName(entity.getLastName());
-        dto.setMiddleName(entity.getMiddleName());
-        dto.setRank(entity.getRank());
-        dto.setSpecialization(entity.getSpecialization());
-        
-        if (entity.getUnit() != null) {
-            dto.setUnit(toMilitaryUnitResponseDTO(entity.getUnit()));
-        }
-        
-        dto.setContractStartDate(entity.getContractStartDate());
-        dto.setContractEndDate(entity.getContractEndDate());
-        dto.setSecurityClearance(entity.getSecurityClearance());
-        dto.setMedicalCategory(entity.getMedicalCategory());
-        dto.setPhoneNumber(entity.getPhoneNumber());
-        dto.setEmail(entity.getEmail());
-        dto.setCreatedAt(entity.getCreatedAt());
-        dto.setUpdatedAt(entity.getUpdatedAt());
-        
-        return dto;
-    }
-
-    private MilitaryUnitResponseDTO toMilitaryUnitResponseDTO(MilitaryUnit entity) {
-        MilitaryUnitResponseDTO dto = new MilitaryUnitResponseDTO();
-        dto.setId(entity.getId());
-        dto.setName(entity.getName());
-        dto.setCode(entity.getCode());
-        dto.setLocation(entity.getLocation());
-        dto.setFormationDate(entity.getFormationDate());
-        dto.setStrength(entity.getStrength());
-        dto.setCurrentStrength(entity.getCurrentStrength());
-        dto.setCreatedAt(entity.getCreatedAt());
-        dto.setUpdatedAt(entity.getUpdatedAt());
-        return dto;
     }
 }

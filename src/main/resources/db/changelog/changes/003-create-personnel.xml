@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="003-create-personnel" author="military-system">
+        <comment>Створення таблиці військовослужбовців</comment>
+        
+        <createTable tableName="personnel">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            
+            <column name="military_id" type="VARCHAR(50)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            
+            <column name="first_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            
+            <column name="last_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            
+            <column name="middle_name" type="VARCHAR(100)"/>
+            
+            <column name="rank" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            
+            <column name="specialization" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            
+            <column name="unit_id" type="BIGINT"/>
+            
+            <column name="position" type="VARCHAR(100)"/>
+            
+            <column name="birth_date" type="DATE"/>
+            
+            <column name="enlistment_date" type="DATE"/>
+            
+            <column name="contract_start_date" type="DATE"/>
+            
+            <column name="contract_end_date" type="DATE"/>
+            
+            <column name="security_clearance" type="VARCHAR(30)"/>
+            
+            <column name="medical_category" type="VARCHAR(20)"/>
+            
+            <column name="phone_number" type="VARCHAR(20)"/>
+            
+            <column name="email" type="VARCHAR(100)"/>
+            
+            <column name="status" type="VARCHAR(20)" defaultValue="ACTIVE">
+                <constraints nullable="false"/>
+            </column>
+            
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        
+        <!-- Foreign key до підрозділу -->
+        <addForeignKeyConstraint 
+            baseTableName="personnel"
+            baseColumnNames="unit_id"
+            referencedTableName="military_units"
+            referencedColumnNames="id"
+            constraintName="fk_personnel_unit"
+            onDelete="SET NULL"/>
+        
+        <rollback>
+            <dropForeignKeyConstraint 
+                baseTableName="personnel"
+                constraintName="fk_personnel_unit"/>
+            <dropTable tableName="personnel"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

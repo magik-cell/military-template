@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001-create-unit-types" author="military-system">
+        <comment>Створення таблиці типів військових підрозділів</comment>
+        
+        <createTable tableName="unit_types">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            
+            <column name="code" type="VARCHAR(20)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            
+            <column name="description" type="VARCHAR(500)"/>
+            
+            <column name="hierarchy" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            
+            <column name="typical_size" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        
+        <rollback>
+            <dropTable tableName="unit_types"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="005-create-users-roles" author="military-system">
+        <comment>Створення таблиць користувачів та ролей для безпеки</comment>
+        
+        <!-- Таблиця ролей -->
+        <createTable tableName="roles">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            
+            <column name="name" type="VARCHAR(30)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            
+            <column name="description" type="VARCHAR(200)"/>
+        </createTable>
+        
+        <!-- Таблиця користувачів -->
+        <createTable tableName="users">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            
+            <column name="username" type="VARCHAR(50)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            
+            <column name="password" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            
+            <column name="email" type="VARCHAR(100)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            
+            <column name="full_name" type="VARCHAR(200)"/>
+            
+            <column name="military_rank" type="VARCHAR(50)"/>
+            
+            <column name="enabled" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        
+        <!-- Таблиця many-to-many зв'язку -->
+        <createTable tableName="user_roles">
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            
+            <column name="role_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        
+        <addPrimaryKey 
+            tableName="user_roles"
+            columnNames="user_id, role_id"
+            constraintName="pk_user_roles"/>
+        
+        <addForeignKeyConstraint 
+            baseTableName="user_roles"
+            baseColumnNames="user_id"
+            referencedTableName="users"
+            referencedColumnNames="id"
+            constraintName="fk_user_roles_user"
+            onDelete="CASCADE"/>
+        
+        <addForeignKeyConstraint 
+            baseTableName="user_roles"
+            baseColumnNames="role_id"
+            referencedTableName="roles"
+            referencedColumnNames="id"
+            constraintName="fk_user_roles_role"
+            onDelete="CASCADE"/>
+        
+        <rollback>
+            <dropTable tableName="user_roles"/>
+            <dropTable tableName="users"/>
+            <dropTable tableName="roles"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

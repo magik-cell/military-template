@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="seed-002-military-units" author="military-system" context="dev">
+        <comment>Додавання тестових військових підрозділів</comment>
+        
+        <!-- Підрозділи -->
+        <insert tableName="military_units">
+            <column name="name" value="1-а механізована бригада"/>
+            <column name="unit_code" value="MECH-BRIGADE-001"/>
+            <column name="type_id" valueComputed="(SELECT id FROM unit_types WHERE code = 'BRIGADE')"/>
+            <column name="location" value="Київська область"/>
+            <column name="personnel_count" value="3500"/>
+            <column name="current_strength" value="3200"/>
+            <column name="formation_date" value="2014-06-01"/>
+            <column name="status" value="ACTIVE"/>
+        </insert>
+        
+        <insert tableName="military_units">
+            <column name="name" value="2-й батальйон"/>
+            <column name="unit_code" value="BATTALION-002"/>
+            <column name="type_id" valueComputed="(SELECT id FROM unit_types WHERE code = 'BATTALION')"/>
+            <column name="location" value="Київська область"/>
+            <column name="parent_unit_id" valueComputed="(SELECT id FROM military_units WHERE unit_code = 'MECH-BRIGADE-001')"/>
+            <column name="personnel_count" value="500"/>
+            <column name="current_strength" value="480"/>
+            <column name="formation_date" value="2014-06-15"/>
+            <column name="status" value="ACTIVE"/>
+        </insert>
+        
+        <insert tableName="military_units">
+            <column name="name" value="1-а штурмова рота"/>
+            <column name="unit_code" value="ASSAULT-COMPANY-001"/>
+            <column name="type_id" valueComputed="(SELECT id FROM unit_types WHERE code = 'COMPANY')"/>
+            <column name="location" value="Київська область"/>
+            <column name="parent_unit_id" valueComputed="(SELECT id FROM military_units WHERE unit_code = 'BATTALION-002')"/>
+            <column name="personnel_count" value="120"/>
+            <column name="current_strength" value="115"/>
+            <column name="formation_date" value="2014-07-01"/>
+            <column name="status" value="ACTIVE"/>
+        </insert>
+        
+        <insert tableName="military_units">
+            <column name="name" value="Розвідувальна рота"/>
+            <column name="unit_code" value="RECON-COMPANY-001"/>
+            <column name="type_id" valueComputed="(SELECT id FROM unit_types WHERE code = 'RECON')"/>
+            <column name="location" value="Київська область"/>
+            <column name="parent_unit_id" valueComputed="(SELECT id FROM military_units WHERE unit_code = 'MECH-BRIGADE-001')"/>
+            <column name="personnel_count" value="80"/>
+            <column name="current_strength" value="78"/>
+            <column name="formation_date" value="2014-06-20"/>
+            <column name="status" value="ACTIVE"/>
+        </insert>
+        
+        <insert tableName="military_units">
+            <column name="name" value="3-я десантно-штурмова бригада"/>
+            <column name="unit_code" value="AIRBORNE-BRIGADE-003"/>
+            <column name="type_id" valueComputed="(SELECT id FROM unit_types WHERE code = 'BRIGADE')"/>
+            <column name="location" value="Житомирська область"/>
+            <column name="personnel_count" value="4000"/>
+            <column name="current_strength" value="3850"/>
+            <column name="formation_date" value="1992-08-24"/>
+            <column name="status" value="ACTIVE"/>
+        </insert>
+        
+        <insert tableName="military_units">
+            <column name="name" value="Служба МТЗ"/>
+            <column name="unit_code" value="SUPPORT-MTZ-001"/>
+            <column name="type_id" valueComputed="(SELECT id FROM unit_types WHERE code = 'SUPPORT')"/>
+            <column name="location" value="Київська область"/>
+            <column name="parent_unit_id" valueComputed="(SELECT id FROM military_units WHERE unit_code = 'MECH-BRIGADE-001')"/>
+            <column name="personnel_count" value="150"/>
+            <column name="current_strength" value="145"/>
+            <column name="formation_date" value="2014-06-10"/>
+            <column name="status" value="ACTIVE"/>
+        </insert>
+        
+        <rollback>
+            <delete tableName="military_units">
+                <where>unit_code IN ('MECH-BRIGADE-001', 'BATTALION-002', 'ASSAULT-COMPANY-001', 'RECON-COMPANY-001', 'AIRBORNE-BRIGADE-003', 'SUPPORT-MTZ-001')</where>
+            </delete>
+        </rollback>
+    </changeSet>
+    
+    <changeSet id="seed-003-personnel" author="military-system" context="dev">
+        <comment>Додавання тестових військовослужбовців</comment>
+        
+        <insert tableName="personnel">
+            <column name="military_id" value="UA-2024-001"/>
+            <column name="first_name" value="Іван"/>
+            <column name="last_name" value="Петренко"/>
+            <column name="middle_name" value="Михайлович"/>
+            <column name="rank" value="COLONEL"/>
+            <column name="specialization" value="Командування військовими підрозділами"/>
+            <column name="unit_id" valueComputed="(SELECT id FROM military_units WHERE unit_code = 'MECH-BRIGADE-001')"/>
+            <column name="position" value="Командир бригади"/>
+            <column name="birth_date" value="1980-03-15"/>
+            <column name="enlistment_date" value="1998-08-01"/>
+            <column name="contract_start_date" value="2022-01-01"/>
+            <column name="contract_end_date" value="2027-12-31"/>
+            <column name="security_clearance" value="TOP_SECRET"/>
+            <column name="medical_category" value="A1"/>
+            <column name="phone_number" value="+380501234567"/>
+            <column name="email" value="i.petrenko@military.gov.ua"/>
+            <column name="status" value="ACTIVE"/>
+        </insert>
+        
+        <insert tableName="personnel">
+            <column name="military_id" value="UA-2024-002"/>
+            <column name="first_name" value="Олег"/>
+            <column name="last_name" value="Коваленко"/>
+            <column name="middle_name" value="Сергійович"/>
+            <column name="rank" value="MAJOR"/>
+            <column name="specialization" value="Тактичне планування"/>
+            <column name="unit_id" valueComputed="(SELECT id FROM military_units WHERE unit_code = 'BATTALION-002')"/>
+            <column name="position" value="Командир батальйону"/>
+            <column name="birth_date" value="1985-07-22"/>
+            <column name="enlistment_date" value="2003-09-01"/>
+            <column name="contract_start_date" value="2021-06-01"/>
+            <column name="contract_end_date" value="2026-05-31"/>
+            <column name="security_clearance" value="SECRET"/>
+            <column name="medical_category" value="A1"/>
+            <column name="phone_number" value="+380501234568"/>
+            <column name="email" value="o.kovalenko@military.gov.ua"/>
+            <column name="status" value="ACTIVE"/>
+        </insert>
+        
+        <insert tableName="personnel">
+            <column name="military_id" value="UA-2024-003"/>
+            <column name="first_name" value="Андрій"/>
+            <column name="last_name" value="Мельник"/>
+            <column name="middle_name" value="Володимирович"/>
+            <column name="rank" value="CAPTAIN"/>
+            <column name="specialization" value="Піхота"/>
+            <column name="unit_id" valueComputed="(SELECT id FROM military_units WHERE unit_code = 'ASSAULT-COMPANY-001')"/>
+            <column name="position" value="Командир роти"/>
+            <column name="birth_date" value="1990-11-10"/>
+            <column name="enlistment_date" value="2008-10-01"/>
+            <column name="contract_start_date" value="2020-01-01"/>
+            <column name="contract_end_date" value="2025-12-31"/>
+            <column name="security_clearance" value="CONFIDENTIAL"/>
+            <column name="medical_category" value="A1"/>
+            <column name="phone_number" value="+380501234569"/>
+            <column name="email" value="a.melnyk@military.gov.ua"/>
+            <column name="status" value="ACTIVE"/>
+        </insert>
+        
+        <insert tableName="personnel">
+            <column name="military_id" value="UA-2024-004"/>
+            <column name="first_name" value="Максим"/>
+            <column name="last_name" value="Шевченко"/>
+            <column name="middle_name" value="Олександрович"/>
+            <column name="rank" value="LIEUTENANT"/>
+            <column name="specialization" value="Розвідка"/>
+            <column name="unit_id" valueComputed="(SELECT id FROM military_units WHERE unit_code = 'RECON-COMPANY-001')"/>
+            <column name="position" value="Командир взводу"/>
+            <column name="birth_date" value="1995-04-18"/>
+            <column name="enlistment_date" value="2013-09-01"/>
+            <column name="contract_start_date" value="2019-03-01"/>
+            <column name="contract_end_date" value="2024-02-29"/>
+            <column name="security_clearance" value="SECRET"/>
+            <column name="medical_category" value="A1"/>
+            <column name="phone_number" value="+380501234570"/>
+            <column name="email" value="m.shevchenko@military.gov.ua"/>
+            <column name="status" value="ACTIVE"/>
+        </insert>
+        
+        <insert tableName="personnel">
+            <column name="military_id" value="UA-2024-005"/>
+            <column name="first_name" value="Дмитро"/>
+            <column name="last_name" value="Бондаренко"/>
+            <column name="middle_name" value="Іванович"/>
+            <column name="rank" value="SERGEANT"/>
+            <column name="specialization" value="Механік-водій"/>
+            <column name="unit_id" valueComputed="(SELECT id FROM military_units WHERE unit_code = 'SUPPORT-MTZ-001')"/>
+            <column name="position" value="Старший механік"/>
+            <column name="birth_date" value="1992-09-25"/>
+            <column name="enlistment_date" value="2010-10-01"/>
+            <column name="contract_start_date" value="2018-01-01"/>
+            <column name="contract_end_date" value="2024-12-31"/>
+            <column name="security_clearance" value="PUBLIC"/>
+            <column name="medical_category" value="B1"/>
+            <column name="phone_number" value="+380501234571"/>
+            <column name="email" value="d.bondarenko@military.gov.ua"/>
+            <column name="status" value="ACTIVE"/>
+        </insert>
+        
+        <insert tableName="personnel">
+            <column name="military_id" value="UA-2024-006"/>
+            <column name="first_name" value="Сергій"/>
+            <column name="last_name" value="Ткаченко"/>
+            <column name="middle_name" value="Петрович"/>
+            <column name="rank" value="SOLDIER"/>
+            <column name="specialization" value="Стрілець"/>
+            <column name="unit_id" valueComputed="(SELECT id FROM military_units WHERE unit_code = 'ASSAULT-COMPANY-001')"/>
+            <column name="position" value="Солдат"/>
+            <column name="birth_date" value="2003-12-05"/>
+            <column name="enlistment_date" value="2022-03-01"/>
+            <column name="contract_start_date" value="2022-03-01"/>
+            <column name="contract_end_date" value="2024-02-29"/>
+            <column name="security_clearance" value="PUBLIC"/>
+            <column name="medical_category" value="A1"/>
+            <column name="phone_number" value="+380501234572"/>
+            <column name="email" value="s.tkachenko@military.gov.ua"/>
+            <column name="status" value="ACTIVE"/>
+        </insert>
+        
+        <insert tableName="personnel">
+            <column name="military_id" value="UA-2024-007"/>
+            <column name="first_name" value="Віктор"/>
+            <column name="last_name" value="Кравченко"/>
+            <column name="middle_name" value="Миколайович"/>
+            <column name="rank" value="SERGEANT"/>
+            <column name="specialization" value="Зв'язківець"/>
+            <column name="unit_id" valueComputed="(SELECT id FROM military_units WHERE unit_code = 'BATTALION-002')"/>
+            <column name="position" value="Начальник зв'язку"/>
+            <column name="birth_date" value="1988-06-30"/>
+            <column name="enlistment_date" value="2006-09-01"/>
+            <column name="contract_start_date" value="2017-01-01"/>
+            <column name="contract_end_date" value="2025-12-31"/>
+            <column name="security_clearance" value="CONFIDENTIAL"/>
+            <column name="medical_category" value="A1"/>
+            <column name="phone_number" value="+380501234573"/>
+            <column name="email" value="v.kravchenko@military.gov.ua"/>
+            <column name="status" value="ACTIVE"/>
+        </insert>
+        
+        <insert tableName="personnel">
+            <column name="military_id" value="UA-2024-008"/>
+            <column name="first_name" value="Олександр"/>
+            <column name="last_name" value="Морозов"/>
+            <column name="middle_name" value="Андрійович"/>
+            <column name="rank" value="JUNIOR_SERGEANT"/>
+            <column name="specialization" value="Снайпер"/>
+            <column name="unit_id" valueComputed="(SELECT id FROM military_units WHERE unit_code = 'RECON-COMPANY-001')"/>
+            <column name="position" value="Снайпер"/>
+            <column name="birth_date" value="1997-02-14"/>
+            <column name="enlistment_date" value="2015-09-01"/>
+            <column name="contract_start_date" value="2019-05-01"/>
+            <column name="contract_end_date" value="2025-04-30"/>
+            <column name="security_clearance" value="CONFIDENTIAL"/>
+            <column name="medical_category" value="A1"/>
+            <column name="phone_number" value="+380501234574"/>
+            <column name="email" value="o.morozov@military.gov.ua"/>
+            <column name="status" value="ACTIVE"/>
+        </insert>
+        
+        <insert tableName="personnel">
+            <column name="military_id" value="UA-2024-009"/>
+            <column name="first_name" value="Ярослав"/>
+            <column name="last_name" value="Лисенко"/>
+            <column name="middle_name" value="Сергійович"/>
+            <column name="rank" value="LIEUTENANT_COLONEL"/>
+            <column name="specialization" value="Командування"/>
+            <column name="unit_id" valueComputed="(SELECT id FROM military_units WHERE unit_code = 'AIRBORNE-BRIGADE-003')"/>
+            <column name="position" value="Заступник командира бригади"/>
+            <column name="birth_date" value="1982-08-20"/>
+            <column name="enlistment_date" value="2000-09-01"/>
+            <column name="contract_start_date" value="2021-01-01"/>
+            <column name="contract_end_date" value="2026-12-31"/>
+            <column name="security_clearance" value="TOP_SECRET"/>
+            <column name="medical_category" value="A1"/>
+            <column name="phone_number" value="+380501234575"/>
+            <column name="email" value="y.lysenko@military.gov.ua"/>
+            <column name="status" value="ACTIVE"/>
+        </insert>
+        
+        <insert tableName="personnel">
+            <column name="military_id" value="UA-2024-010"/>
+            <column name="first_name" value="Ігор"/>
+            <column name="last_name" value="Романенко"/>
+            <column name="middle_name" value="Васильович"/>
+            <column name="rank" value="SOLDIER"/>
+            <column name="specialization" value="Навідник"/>
+            <column name="unit_id" valueComputed="(SELECT id FROM military_units WHERE unit_code = 'ASSAULT-COMPANY-001')"/>
+            <column name="position" value="Навідник"/>
+            <column name="birth_date" value="2002-10-12"/>
+            <column name="enlistment_date" value="2021-09-01"/>
+            <column name="contract_start_date" value="2021-09-01"/>
+            <column name="contract_end_date" value="2024-08-31"/>
+            <column name="security_clearance" value="PUBLIC"/>
+            <column name="medical_category" value="A1"/>
+            <column name="phone_number" value="+380501234576"/>
+            <column name="email" value="i.romanenko@military.gov.ua"/>
+            <column name="status" value="ACTIVE"/>
+        </insert>
+        
+        <rollback>
+            <delete tableName="personnel">
+                <where>military_id LIKE 'UA-2024-%'</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

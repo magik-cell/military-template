@@ -26,11 +26,11 @@ public class MilitaryUnit {
     @Column(nullable = false, length = 150)
     private String name;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(name = "unit_code", nullable = false, unique = true, length = 50)
     private String code;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "unit_type_id", nullable = false)
+    @JoinColumn(name = "type_id", nullable = false)
     private UnitType unitType;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -47,11 +47,14 @@ public class MilitaryUnit {
     @Column
     private LocalDate formationDate;
 
-    @Column
+    @Column(name = "personnel_count")
     private Integer strength;
 
-    @Column
+    @Column(name = "current_strength")
     private Integer currentStrength;
+
+    @Column(length = 30)
+    private String status;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)

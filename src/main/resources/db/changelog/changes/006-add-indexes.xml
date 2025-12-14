@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="006-add-indexes" author="military-system">
+        <comment>Додавання індексів для покращення продуктивності</comment>
+        
+        <!-- Індекси для unit_types -->
+        <createIndex indexName="idx_unit_types_code" tableName="unit_types">
+            <column name="code"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_unit_types_hierarchy" tableName="unit_types">
+            <column name="hierarchy"/>
+        </createIndex>
+        
+        <!-- Індекси для military_units -->
+        <createIndex indexName="idx_units_code" tableName="military_units">
+            <column name="unit_code"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_units_type" tableName="military_units">
+            <column name="type_id"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_units_status" tableName="military_units">
+            <column name="status"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_units_location" tableName="military_units">
+            <column name="location"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_units_parent" tableName="military_units">
+            <column name="parent_unit_id"/>
+        </createIndex>
+        
+        <!-- Індекси для personnel -->
+        <createIndex indexName="idx_personnel_military_id" tableName="personnel">
+            <column name="military_id"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_personnel_unit" tableName="personnel">
+            <column name="unit_id"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_personnel_rank" tableName="personnel">
+            <column name="rank"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_personnel_status" tableName="personnel">
+            <column name="status"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_personnel_specialization" tableName="personnel">
+            <column name="specialization"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_personnel_last_name" tableName="personnel">
+            <column name="last_name"/>
+        </createIndex>
+        
+        <!-- Композитний індекс для частих запитів -->
+        <createIndex indexName="idx_personnel_unit_rank" tableName="personnel">
+            <column name="unit_id"/>
+            <column name="rank"/>
+        </createIndex>
+        
+        <!-- Індекси для users -->
+        <createIndex indexName="idx_users_username" tableName="users">
+            <column name="username"/>
+        </createIndex>
+        
+        <createIndex indexName="idx_users_email" tableName="users">
+            <column name="email"/>
+        </createIndex>
+        
+        <rollback>
+            <!-- Видалення всіх створених індексів -->
+            <dropIndex indexName="idx_unit_types_code" tableName="unit_types"/>
+            <dropIndex indexName="idx_unit_types_hierarchy" tableName="unit_types"/>
+            <dropIndex indexName="idx_units_code" tableName="military_units"/>
+            <dropIndex indexName="idx_units_type" tableName="military_units"/>
+            <dropIndex indexName="idx_units_status" tableName="military_units"/>
+            <dropIndex indexName="idx_units_location" tableName="military_units"/>
+            <dropIndex indexName="idx_units_parent" tableName="military_units"/>
+            <dropIndex indexName="idx_personnel_military_id" tableName="personnel"/>
+            <dropIndex indexName="idx_personnel_unit" tableName="personnel"/>
+            <dropIndex indexName="idx_personnel_rank" tableName="personnel"/>
+            <dropIndex indexName="idx_personnel_status" tableName="personnel"/>
+            <dropIndex indexName="idx_personnel_specialization" tableName="personnel"/>
+            <dropIndex indexName="idx_personnel_last_name" tableName="personnel"/>
+            <dropIndex indexName="idx_personnel_unit_rank" tableName="personnel"/>
+            <dropIndex indexName="idx_users_username" tableName="users"/>
+            <dropIndex indexName="idx_users_email" tableName="users"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,5 +1,6 @@
 package ua.edu.viti.military.service;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -41,7 +42,7 @@ public class SupplyCategoryService {
         return toDto(saved);
     }
 
-    public SupplyCategoryResponseDTO getById(Long id) {
+    public SupplyCategoryResponseDTO getById(@NonNull Long id) {
         SupplyCategory entity = repository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Категорію з id " + id + " не знайдено"));
         return toDto(entity);
@@ -52,7 +53,7 @@ public class SupplyCategoryService {
     }
 
     @Transactional
-    public void delete(Long id) {
+    public void delete(@NonNull Long id) {
         if (!repository.existsById(id)) {
             throw new ResourceNotFoundException("Категорію з id " + id + " не знайдено");
         }

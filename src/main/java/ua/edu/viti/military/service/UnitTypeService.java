@@ -1,7 +1,10 @@
 package ua.edu.viti.military.service;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ua.edu.viti.military.dto.request.UnitTypeCreateDTO;
@@ -10,10 +13,10 @@ import ua.edu.viti.military.dto.response.UnitTypeResponseDTO;
 import ua.edu.viti.military.entity.UnitType;
 import ua.edu.viti.military.exception.DuplicateResourceException;
 import ua.edu.viti.military.exception.ResourceNotFoundException;
+import ua.edu.viti.military.mapper.UnitTypeMapper;
 import ua.edu.viti.military.repository.UnitTypeRepository;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,8 +25,11 @@ import java.util.stream.Collectors;
 public class UnitTypeService {
 
     private final UnitTypeRepository unitTypeRepository;
+    private final UnitTypeMapper unitTypeMapper;
 
-    @Transactional
+    @SuppressWarnings("null")
+	@Transactional
+    @CacheEvict(value = "unitTypes", key = "'all'")
     public UnitTypeResponseDTO create(UnitTypeCreateDTO dto) {
         log.info("Creating new unit type with code: {}", dto.getKod());
 
@@ -34,41 +40,50 @@ public class UnitTypeService {
             );
         }
 
-       
-        UnitType unitType = new UnitType();
-        unitType.setName(dto.getNazva());
-        unitType.setCode(dto.getKod());
-        unitType.setDescription(dto.getOpys());
-        unitType.setHierarchy(dto.getIerarhiya());
-        unitType.setTypicalSize(dto.getTypovyiRozmir());   
+        // MapStruct маппінг DTO → Entity
+        UnitType unitType = unitTypeMapper.toEntity(dto);
+        
         UnitType saved = unitTypeRepository.save(unitType);
         log.info("Unit type created with ID: {}", saved.getId());
 
-        return toResponseDTO(saved);
+        // MapStruct маппінг Entity → ResponseDTO
+        return unitTypeMapper.toResponseDTO(saved);
     }
 
-    public UnitTypeResponseDTO getById(Long id) {
-        log.debug("Fetching unit type with ID: {}", id);
+    /**
+     * Кешування - результат зберігається в Redis
+     * Ключ: unitTypes::1 (де 1 - це id)
+     */
+    @Cacheable(value = "unitTypes", key = "#id")
+    public UnitTypeResponseDTO getById(@NonNull Long id) {
+        log.info("Fetching unit type from database: id={}", id);
 
         UnitType unitType = unitTypeRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Тип підрозділу з ID " + id + " не знайдено"
             ));
 
-        return toResponseDTO(unitType);
+        return unitTypeMapper.toResponseDTO(unitType);
     }
 
+    /**
+     * Кешування списку
+     * Ключ: unitTypes::all
+     */
+    @Cacheable(value = "unitTypes", key = "'all'")
     public List<UnitTypeResponseDTO> getAll() {
-        log.debug("Fetching all unit types");
+        log.info("Fetching all unit types from database");
 
-        return unitTypeRepository.findAll()
-            .stream()
-            .map(this::toResponseDTO)
-            .collect(Collectors.toList());
+        return unitTypeMapper.toResponseDTOList(unitTypeRepository.findAll());
     }
 
+    /**
+     * При оновленні - invalidate конкретний запис та список
+     */
     @Transactional
-    public UnitTypeResponseDTO update(Long id, UnitTypeUpdateDTO dto) {
+    @SuppressWarnings("null")
+    @CacheEvict(value = "unitTypes", allEntries = true)
+    public UnitTypeResponseDTO update(@NonNull Long id, UnitTypeUpdateDTO dto) {
         log.info("Updating unit type with ID: {}", id);
 
         UnitType unitType = unitTypeRepository.findById(id)
@@ -76,25 +91,21 @@ public class UnitTypeService {
                 "Тип підрозділу з ID " + id + " не знайдено"
             ));
 
-       
-        if (dto.getNazva() != null) {
-            unitType.setName(dto.getNazva());
-        }
-        if (dto.getOpys() != null) {
-            unitType.setDescription(dto.getOpys());
-        }
-        if (dto.getTypovyiRozmir() != null) {
-            unitType.setTypicalSize(dto.getTypovyiRozmir());
-        }
+        // MapStruct оновлення Entity з DTO (тільки non-null поля)
+        unitTypeMapper.updateEntityFromUpdateDTO(dto, unitType);
 
         UnitType updated = unitTypeRepository.save(unitType);
         log.info("Unit type with ID {} updated successfully", id);
 
-        return toResponseDTO(updated);
+        return unitTypeMapper.toResponseDTO(updated);
     }
 
+    /**
+     * При видаленні - invalidate кеш
+     */
     @Transactional
-    public void delete(Long id) {
+    @CacheEvict(value = "unitTypes", allEntries = true)
+    public void delete(@NonNull Long id) {
         log.info("Deleting unit type with ID: {}", id);
 
         if (!unitTypeRepository.existsById(id)) {
@@ -105,19 +116,5 @@ public class UnitTypeService {
 
         unitTypeRepository.deleteById(id);
         log.info("Unit type with ID {} deleted successfully", id);
-    }
-
-
-    private UnitTypeResponseDTO toResponseDTO(UnitType entity) {
-        UnitTypeResponseDTO dto = new UnitTypeResponseDTO();
-        dto.setId(entity.getId());
-        dto.setName(entity.getName());
-        dto.setCode(entity.getCode());
-        dto.setDescription(entity.getDescription());
-        dto.setHierarchy(entity.getHierarchy());
-        dto.setTypicalSize(entity.getTypicalSize());
-        dto.setCreatedAt(entity.getCreatedAt());
-        dto.setUpdatedAt(entity.getUpdatedAt());
-        return dto;
     }
 }

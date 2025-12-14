@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="002-create-military-units" author="military-system">
+        <comment>Створення таблиці військових підрозділів</comment>
+        
+        <createTable tableName="military_units">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            
+            <column name="name" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            
+            <column name="unit_code" type="VARCHAR(50)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            
+            <column name="type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            
+            <column name="location" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            
+            <column name="parent_unit_id" type="BIGINT"/>
+            
+            <column name="commander_id" type="BIGINT"/>
+            
+            <column name="personnel_count" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            
+            <column name="current_strength" type="INTEGER" defaultValueNumeric="0"/>
+            
+            <column name="formation_date" type="DATE"/>
+            
+            <column name="status" type="VARCHAR(30)" defaultValue="ACTIVE">
+                <constraints nullable="false"/>
+            </column>
+            
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        
+        <!-- Foreign key до типу підрозділу -->
+        <addForeignKeyConstraint 
+            baseTableName="military_units"
+            baseColumnNames="type_id"
+            referencedTableName="unit_types"
+            referencedColumnNames="id"
+            constraintName="fk_units_type"
+            onDelete="RESTRICT"/>
+        
+        <!-- Self-referencing foreign key для ієрархії -->
+        <addForeignKeyConstraint 
+            baseTableName="military_units"
+            baseColumnNames="parent_unit_id"
+            referencedTableName="military_units"
+            referencedColumnNames="id"
+            constraintName="fk_units_parent"
+            onDelete="SET NULL"/>
+        
+        <rollback>
+            <dropForeignKeyConstraint 
+                baseTableName="military_units"
+                constraintName="fk_units_type"/>
+            <dropForeignKeyConstraint 
+                baseTableName="military_units"
+                constraintName="fk_units_parent"/>
+            <dropTable tableName="military_units"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

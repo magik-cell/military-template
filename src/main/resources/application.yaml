@@ -13,13 +13,32 @@ spring:
   # JPA Configuration
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none  # ВАЖЛИВО: Вимкніть Hibernate DDL - тепер Liquibase керує схемою!
     show-sql: true
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
+  
+  # Liquibase Configuration
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    enabled: true
+    drop-first: false  # НЕ видаляти БД при старті (небезпечно!)
+
+  # Redis Configuration
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 60000
+
+  # Cache Configuration
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000  # 1 година (3600000 ms)
 
 # SpringDoc OpenAPI Configuration
 springdoc:
@@ -29,6 +48,30 @@ springdoc:
     path: /swagger-ui.html
     tags-sorter: alpha
     operations-sorter: alpha
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  info:
+    env:
+      enabled: true
+
+# Application Info
+info:
+  app:
+    name: Military Management API
+    version: 2.0.0
+    stage: Stage 2 - Enterprise Features
 
 # Logging Configuration
 logging:
@@ -42,5 +85,14 @@ logging:
 server:
   port: 8080
   error:
+    include-message: always
+    include-binding-errors: always
+
+# JWT Configuration
+app:
+  jwt:
+    secret: VerySecretKeyThatShouldBeAtLeast256BitsLongForHS256AlgorithmSecurityMilitaryPersonnel2024
+    expiration-ms: 86400000  # 24 години (86400000 мс)
+
     include-message: always
     include-binding-errors: always

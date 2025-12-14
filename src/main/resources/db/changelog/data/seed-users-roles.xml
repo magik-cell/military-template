@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Додавання базових ролей -->
+    <changeSet id="008-insert-default-roles" author="military-system">
+        <comment>Додавання базових ролей для системи</comment>
+        
+        <insert tableName="roles">
+            <column name="name" value="ROLE_ADMIN"/>
+            <column name="description" value="Повний доступ до системи"/>
+        </insert>
+        
+        <insert tableName="roles">
+            <column name="name" value="ROLE_OPERATOR"/>
+            <column name="description" value="Виконання операцій з персоналом"/>
+        </insert>
+        
+        <insert tableName="roles">
+            <column name="name" value="ROLE_VIEWER"/>
+            <column name="description" value="Тільки перегляд даних"/>
+        </insert>
+    </changeSet>
+    
+    <!-- Створення адміністратора за замовчуванням -->
+    <changeSet id="008-insert-default-admin" author="military-system">
+        <comment>Створення адміністратора за замовчуванням (admin/admin123)</comment>
+        
+        <!-- Пароль: admin123 (BCrypt hash) -->
+        <insert tableName="users">
+            <column name="username" value="admin"/>
+            <column name="email" value="admin@viti.edu.ua"/>
+            <column name="password" value="$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"/>
+            <column name="full_name" value="System Administrator"/>
+            <column name="military_rank" value="Полковник"/>
+            <column name="enabled" valueBoolean="true"/>
+        </insert>
+        
+        <!-- Призначити роль ADMIN -->
+        <sql>
+            INSERT INTO user_roles (user_id, role_id)
+            SELECT u.id, r.id
+            FROM users u, roles r
+            WHERE u.username = 'admin' AND r.name = 'ROLE_ADMIN'
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

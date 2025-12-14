@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- 1. Створення схеми -->
+    <include file="db/changelog/changes/001-create-unit-types.xml"/>
+    <include file="db/changelog/changes/002-create-military-units.xml"/>
+    <include file="db/changelog/changes/003-create-personnel.xml"/>
+    <include file="db/changelog/changes/004-create-movement-log.xml"/>
+    <include file="db/changelog/changes/005-create-users-roles.xml"/>
+    <include file="db/changelog/changes/006-add-indexes.xml"/>
+    <include file="db/changelog/changes/007-add-commander-fk.xml"/>
+    
+    <!-- 2. Seed data -->
+    <include file="db/changelog/data/seed-unit-types.xml"/>
+    <include file="db/changelog/data/seed-test-data.xml"/>
+    <include file="db/changelog/data/seed-users-roles.xml"/>
+
+</databaseChangeLog>

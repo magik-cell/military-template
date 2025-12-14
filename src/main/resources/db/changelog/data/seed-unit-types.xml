@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="seed-001-unit-types" author="military-system" context="dev">
+        <comment>Додавання початкових типів військових підрозділів</comment>
+        
+        <!-- Вищий рівень -->
+        <insert tableName="unit_types">
+            <column name="name" value="Бригада"/>
+            <column name="code" value="BRIGADE"/>
+            <column name="description" value="Бригада - основна тактична одиниця"/>
+            <column name="hierarchy" valueNumeric="1"/>
+            <column name="typical_size" valueNumeric="3000"/>
+        </insert>
+        
+        <!-- Середній рівень -->
+        <insert tableName="unit_types">
+            <column name="name" value="Батальйон"/>
+            <column name="code" value="BATTALION"/>
+            <column name="description" value="Батальйон - тактичний підрозділ у складі бригади"/>
+            <column name="hierarchy" valueNumeric="2"/>
+            <column name="typical_size" valueNumeric="500"/>
+        </insert>
+        
+        <insert tableName="unit_types">
+            <column name="name" value="Рота"/>
+            <column name="code" value="COMPANY"/>
+            <column name="description" value="Рота - основний тактичний підрозділ"/>
+            <column name="hierarchy" valueNumeric="3"/>
+            <column name="typical_size" valueNumeric="100"/>
+        </insert>
+        
+        <!-- Нижчий рівень -->
+        <insert tableName="unit_types">
+            <column name="name" value="Взвод"/>
+            <column name="code" value="PLATOON"/>
+            <column name="description" value="Взвод - первинний тактичний підрозділ"/>
+            <column name="hierarchy" valueNumeric="4"/>
+            <column name="typical_size" valueNumeric="30"/>
+        </insert>
+        
+        <insert tableName="unit_types">
+            <column name="name" value="Відділення"/>
+            <column name="code" value="SQUAD"/>
+            <column name="description" value="Відділення - найменший тактичний підрозділ"/>
+            <column name="hierarchy" valueNumeric="5"/>
+            <column name="typical_size" valueNumeric="10"/>
+        </insert>
+        
+        <!-- Спеціалізовані підрозділи -->
+        <insert tableName="unit_types">
+            <column name="name" value="Розвідувальний підрозділ"/>
+            <column name="code" value="RECON"/>
+            <column name="description" value="Розвідувальний підрозділ"/>
+            <column name="hierarchy" valueNumeric="3"/>
+            <column name="typical_size" valueNumeric="50"/>
+        </insert>
+        
+        <insert tableName="unit_types">
+            <column name="name" value="Штаб"/>
+            <column name="code" value="HQ"/>
+            <column name="description" value="Штаб - керівний орган"/>
+            <column name="hierarchy" valueNumeric="0"/>
+            <column name="typical_size" valueNumeric="20"/>
+        </insert>
+        
+        <insert tableName="unit_types">
+            <column name="name" value="Служба забезпечення"/>
+            <column name="code" value="SUPPORT"/>
+            <column name="description" value="Служба матеріально-технічного забезпечення"/>
+            <column name="hierarchy" valueNumeric="2"/>
+            <column name="typical_size" valueNumeric="150"/>
+        </insert>
+        
+        <rollback>
+            <delete tableName="unit_types">
+                <where>code IN ('BRIGADE', 'BATTALION', 'COMPANY', 'PLATOON', 'SQUAD', 'RECON', 'HQ', 'SUPPORT')</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
